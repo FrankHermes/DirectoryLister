@@ -620,6 +620,18 @@ class DirectoryLister {
                             $urlPath = $urlPath;
                         }
 
+                        $fileName = pathinfo($realPath, PATHINFO_DIRNAME) ."/". pathinfo($realPath, PATHINFO_FILENAME) . ".json";
+                        if(file_exists($fileName))
+                        {
+                            $fileInfo = file_get_contents($fileName);
+                        }
+                        else
+                        {
+                            unset($fileInfo);
+                            //$fileInfo = "file not found" .$realPath . " : ". $fileName;
+                        }
+
+
                         // Add the info to the main array
                         $directoryArray[pathinfo($relativePath, PATHINFO_BASENAME)] = array(
                             'file_path'  => $relativePath,
@@ -627,7 +639,8 @@ class DirectoryLister {
                             'file_size'  => is_dir($realPath) ? '-' : $this->getFileSize($realPath),
                             'mod_time'   => date('Y-m-d H:i:s', filemtime($realPath)),
                             'icon_class' => $iconClass,
-                            'sort'       => $sort
+                            'sort'       => $sort,
+                            'info'       => $fileInfo
                         );
                     }
 
