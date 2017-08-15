@@ -3,11 +3,12 @@
 return array(
 
     // Basic settings
+    'home_label'                => 'Home',
     'hide_dot_files'            => true,
     'list_folders_first'        => true,
     'list_sort_order'           => 'natcasesort',
     'theme_name'                => 'bootstrap',
-    'external_links_new_window' => true,
+    'date_format'               => 'Y-m-d H:i:s', // See: http://php.net/manual/en/function.date.php
 
     // Hidden files
     'hidden_files' => array(
@@ -19,6 +20,13 @@ return array(
         'header.php',
         'footer.php'
     ),
+
+    // If set to 'true' an directory with an index file (as defined below) will
+    // become a direct link to the index page instead of a browsable directory
+    'links_dirs_with_index' => false,
+
+    // Make linked directories open in a new (_blank) tab
+    'external_links_new_window' => true,
 
     // Files that, if present in a directory, make the directory
     // a direct link rather than a browse link.

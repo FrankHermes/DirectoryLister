@@ -11,12 +11,12 @@
  * More info available at http://www.directorylister.com
  *
  * @author Chris Kankiewicz (http://www.chriskankiewicz.com)
- * @copyright 2015 Chris Kankiewicz
+ * @copyright 2017 Chris Kankiewicz
  */
 class DirectoryLister {
 
     // Define application version
-    const VERSION = '2.6.1';
+    const VERSION = '2.7.0';
 
     // Reserve some variables
     protected $_themeName     = null;
@@ -98,7 +98,7 @@ class DirectoryLister {
             $filename_no_ext = basename($directory);
 
             if ($directory == '.') {
-                $filename_no_ext = 'Home';
+                $filename_no_ext = $this->_config['home_label'];
             }
 
             // We deliver a zip file
@@ -194,25 +194,18 @@ class DirectoryLister {
         // Statically set the Home breadcrumb
         $breadcrumbsArray[] = array(
             'link' => $this->_appURL,
-            'text' => 'Home'
+            'text' => $this->_config['home_label']
         );
 
         // Generate breadcrumbs
+        $dirPath  = null;
+
         foreach ($dirArray as $key => $dir) {
 
             if ($dir != '.') {
 
-                $dirPath  = null;
-
                 // Build the directory path
-                for ($i = 0; $i <= $key; $i++) {
-                    $dirPath = $dirPath . $dirArray[$i] . '/';
-                }
-
-                // Remove trailing slash
-                if(substr($dirPath, -1) == '/') {
-                    $dirPath = substr($dirPath, 0, -1);
-                }
+                $dirPath = is_null($dirPath) ? $dir : $dirPath . '/' .  $dir;
 
                 // Combine the base path and dir path
                 $link = $this->_appURL . '?dir=' . rawurlencode($dirPath);
@@ -240,16 +233,22 @@ class DirectoryLister {
      */
     public function containsIndex($dirPath) {
 
-        // Check if directory contains an index file
-        foreach ($this->_config['index_files'] as $indexFile) {
+        // Check if links_dirs_with_index is enabled
+        if ($this->linksDirsWithIndex()) {
 
-            if (file_exists($dirPath . '/' . $indexFile)) {
+            // Check if directory contains an index file
+            foreach ($this->_config['index_files'] as $indexFile) {
 
-                return true;
+                if (file_exists($dirPath . '/' . $indexFile)) {
+
+                    return true;
+
+                }
 
             }
 
         }
+
 
         return false;
 
@@ -296,6 +295,18 @@ class DirectoryLister {
      */
     public function externalLinksNewWindow() {
         return $this->_config['external_links_new_window'];
+    }
+
+
+    /**
+     * Returns use real url for indexed directories
+     *
+     * @return boolean Returns true if in config is enabled links for directories with index, false if not
+     * @access public
+     */
+    public function linksDirsWithIndex()
+    {
+        return $this->_config['links_dirs_with_index'];
     }
 
 
@@ -600,7 +611,7 @@ class DirectoryLister {
                             'file_path'  => $this->_appURL . $directoryPath,
                             'url_path'   => $this->_appURL . $directoryPath,
                             'file_size'  => '-',
-                            'mod_time'   => date('Y-m-d H:i:s', filemtime($realPath)),
+                            'mod_time'   => date($this->_config['date_format'], filemtime($realPath)),
                             'icon_class' => 'fa-level-up',
                             'sort'       => 0
                         );
@@ -615,9 +626,7 @@ class DirectoryLister {
                         $urlPath = implode('/', array_map('rawurlencode', explode('/', $relativePath)));
 
                         if (is_dir($relativePath)) {
-                            $urlPath = '?dir=' . $urlPath;
-                        } else {
-                            $urlPath = $urlPath;
+                            $urlPath = $this->containsIndex($relativePath) ? $relativePath : '?dir=' . $urlPath;
                         }
 
                         $fileName = pathinfo($realPath, PATHINFO_DIRNAME) ."/". pathinfo($realPath, PATHINFO_FILENAME) . ".json";
@@ -637,7 +646,7 @@ class DirectoryLister {
                             'file_path'  => $relativePath,
                             'url_path'   => $urlPath,
                             'file_size'  => is_dir($realPath) ? '-' : $this->getFileSize($realPath),
-                            'mod_time'   => date('Y-m-d H:i:s', filemtime($realPath)),
+                            'mod_time'   => date($this->_config['date_format'], filemtime($realPath)),
                             'icon_class' => $iconClass,
                             'sort'       => $sort,
                             'info'       => $fileInfo
@@ -811,7 +820,11 @@ class DirectoryLister {
         }
 
         // Get the server hostname
-        $host = $_SERVER['HTTP_HOST'];
+        if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+	        $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
+	    } else {
+	        $host = $_SERVER['HTTP_HOST'];
+	    }
 
         // Get the URL path
         $pathParts = pathinfo($_SERVER['PHP_SELF']);
